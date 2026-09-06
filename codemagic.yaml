@@ -1,6 +1,6 @@
 workflows:
   android:
-    name: TZ Android APK
+    name: TZ Android Production APK
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
@@ -10,13 +10,15 @@ workflows:
         script: flutter create --platforms=android .
       - name: Restore Temz Store logo
         script: base64 --decode assets/temz_logo.b64 > assets/temz_logo.jpg
-      - name: Build release APK with Supabase
-        script: flutter pub get && flutter build apk --release --target=lib/main_supabase.dart
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Build production release APK
+        script: flutter build apk --release --target=lib/production_main.dart
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
 
   windows:
-    name: TZ Windows EXE
+    name: TZ Windows Production
     max_build_duration: 60
     instance_type: windows_x2
     environment:
@@ -26,8 +28,10 @@ workflows:
         script: flutter create --platforms=windows .
       - name: Restore Temz Store logo
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
-      - name: Build Windows with Supabase
-        script: flutter pub get && flutter config --enable-windows-desktop && flutter build windows --release --target=lib/main_supabase.dart
+      - name: Install dependencies
+        script: flutter pub get
+      - name: Build production Windows app
+        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/production_main.dart
       - name: Package Windows bundle
         script: cd build/windows/x64/runner/Release; 7z a -r ../TZ-Windows.zip ./*
     artifacts:
