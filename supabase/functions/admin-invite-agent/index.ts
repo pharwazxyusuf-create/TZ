@@ -6,7 +6,9 @@ const cors = {
   'Content-Type': 'application/json',
 }
 
-const redirectTo = 'tz://auth-callback/'
+// The secure Supabase link first lands on the Temz confirmation page.
+// That page then opens the TZ mobile deep link with the auth parameters intact.
+const redirectTo = 'https://temz.ng/tz-auth/'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -29,10 +31,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser()
     if (userError || !user) throw new Error('Invalid session')
 
-    const admin = createClient(url, secretKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
-
+    const admin = createClient(url, secretKey, { auth: { autoRefreshToken: false, persistSession: false } })
     const { data: caller, error: callerError } = await admin.from('profiles').select('id,role').eq('id', user.id).maybeSingle()
     if (callerError) throw callerError
     if (caller?.role !== 'admin') {
@@ -52,8 +51,8 @@ Deno.serve(async (req) => {
     let linkData: any = null
     let linkError: any = null
 
-    // New agents use a one-time invite link. If this email already has an Auth account,
-    // fall back to a one-time magic link so the admin can refresh the agent's access link.
+    // New account: invite link. Existing account: recovery link.
+    // Recovery is preferable to a magic link because the agent must establish a personal password.
     ({ data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: 'invite',
       email,
@@ -62,9 +61,9 @@ Deno.serve(async (req) => {
 
     if (linkError) {
       ({ data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-        type: 'magiclink',
+        type: 'recovery',
         email,
-        options: { redirectTo, data: metadata },
+        options: { redirectTo },
       }))
       if (linkError) throw linkError
     }
@@ -72,7 +71,6 @@ Deno.serve(async (req) => {
     const agentUser = linkData?.user
     if (!agentUser) throw new Error('Agent account could not be created or found')
 
-    // Keep the Auth metadata current even when the magic-link fallback was used.
     const { error: authUpdateError } = await admin.auth.admin.updateUserById(agentUser.id, { user_metadata: metadata })
     if (authUpdateError) throw authUpdateError
 
@@ -105,7 +103,7 @@ Deno.serve(async (req) => {
       email,
       action_link: actionLink,
       redirect_to: redirectTo,
-      message: 'Agent access link created. Share it privately. It is time-limited and the agent will be asked to set a personal password.',
+      message: 'Agent access link created. Share it privately. It is single-use/time-limited and will go through the Temz Store confirmation page before opening TZ.',
     }), { status: 200, headers: cors })
   } catch (error) {
     console.error(error)
