@@ -76,12 +76,17 @@ if old in s:
 s = s.replace('stream: db.auth.onAuthStateChange,', 'stream: db.auth.onAuthStateChange.handleError((_) {}),')
 p.write_text(s, encoding='utf-8')
 
+# Add Android INTERNET permission as a child of <manifest>, not inside the opening tag.
+# The previous implementation placed <uses-permission> inside <manifest ...>, which makes
+# AndroidManifest.xml invalid XML and causes Gradle's "Error parsing LocalFile" failure.
 manifest = Path('android/app/src/main/AndroidManifest.xml')
 if manifest.exists():
     m = manifest.read_text(encoding='utf-8')
     permission = '<uses-permission android:name="android.permission.INTERNET" />'
     if permission not in m:
-        m = m.replace('<manifest ', '<manifest ' + '\n    ' + permission + '\n', 1)
-        manifest.write_text(m, encoding='utf-8')
+        opening_end = m.find('>')
+        if opening_end != -1 and '<manifest' in m[:opening_end + 1]:
+            m = m[:opening_end + 1] + '\n    ' + permission + m[opening_end + 1:]
+            manifest.write_text(m, encoding='utf-8')
 
 print('TZ final build fixes applied successfully.')
