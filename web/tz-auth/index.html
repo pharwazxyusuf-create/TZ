@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TZ — Temz Store Authentication</title>
+  <style>
+    body{margin:0;background:#f5f8fd;font-family:Arial,sans-serif;color:#071b3a;display:grid;place-items:center;min-height:100vh}
+    .card{background:#fff;max-width:430px;margin:24px;padding:32px;border-radius:24px;text-align:center;box-shadow:0 12px 40px #071b3a18}
+    .logo{width:120px;height:120px;object-fit:contain;margin:auto;display:block}
+    h1{margin:18px 0 8px;font-size:28px}.status{font-weight:700;color:#1264e8;line-height:1.5}
+    .button{display:inline-block;margin-top:22px;background:#1264e8;color:white;text-decoration:none;padding:14px 22px;border-radius:12px;font-weight:800}
+    small{display:block;margin-top:16px;color:#667085}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="/assets/temz_logo_clean.svg" alt="Temz Store">
+    <h1>Temz Store</h1>
+    <div id="status" class="status">Confirming your account…</div>
+    <a id="open" class="button" href="tz://auth-callback/">OPEN TZ APP</a>
+    <small>If TZ does not open automatically, tap the button above.</small>
+  </main>
+  <script>
+    const target = 'tz://auth-callback/' + window.location.search + window.location.hash;
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error_description') || params.get('error');
+    const status = document.getElementById('status');
+    const open = document.getElementById('open');
+    open.href = target;
+    if (error) {
+      status.textContent = 'We could not complete the confirmation: ' + error;
+    } else {
+      status.textContent = 'Your email has been processed. TZ will open so you can continue to login.';
+      setTimeout(() => { window.location.href = target; }, 1200);
+    }
+  </script>
+</body>
+</html>
