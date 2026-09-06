@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
-const adminEmails = <String>{'pharwazxyusuf@gmail.com','mytemzbusiness@gmail.com','omolaratemilade567@gmail.com'};
+const adminEmails = <String>{
+  'pharwazxyusuf@gmail.com',
+  'mytemzbusiness@gmail.com',
+  'omolaratemilade567@gmail.com',
+};
 const adminDemoPassword = 'TZ2026!';
 const agentDemoEmail = 'agent@temz.ng';
 const agentDemoPassword = 'Agent2026!';
 const phoneNumber = '09012533620';
-const logoData = 'UklGRuQwAABXRUJQVlA4IBgAAAAwAQCdASoIAAgAAkA4JYwCdAD0CwB1gAAAP7/7QAAAAAA';
+const logoData = 'LOGO_DATA_PLACEHOLDER';
 Uint8List get logoBytes => base64Decode(logoData);
 
 class Product { Product(this.name,this.price,this.central); String name; double price; int central; }
