@@ -9,7 +9,7 @@ workflows:
       - name: Generate Android project files
         script: flutter create --platforms=android .
       - name: Restore Temz Store logo
-        script: base64 --decode assets/temz_logo.b64 > assets/temz_logo.jpg
+        script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Apply production UI patches
         script: python3 tool/prepare_production.py
       - name: Install dependencies
@@ -30,7 +30,7 @@ workflows:
       - name: Generate iOS project files
         script: flutter create --platforms=ios .
       - name: Restore Temz Store logo
-        script: base64 --decode assets/temz_logo.b64 > assets/temz_logo.jpg
+        script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Apply production UI patches
         script: python3 tool/prepare_production.py
       - name: Install dependencies
