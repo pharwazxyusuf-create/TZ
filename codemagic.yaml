@@ -1,0 +1,23 @@
+workflows:
+  android:
+    name: TZ Android APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Build APK
+        script: flutter pub get && flutter build apk --debug
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+  windows:
+    name: TZ Windows EXE
+    max_build_duration: 60
+    instance_type: windows_x2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Build Windows
+        script: flutter pub get && flutter config --enable-windows-desktop && flutter build windows --release
+    artifacts:
+      - build/windows/x64/runner/Release/**
