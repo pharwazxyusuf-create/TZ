@@ -10,14 +10,12 @@ workflows:
         script: flutter create --platforms=android .
       - name: Restore Temz Store logo
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
-      - name: Apply production UI patches
-        script: python3 tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
-      - name: Analyze production Dart code
-        script: flutter analyze lib/production_main.dart
+      - name: Analyze clean production Dart code
+        script: flutter analyze lib/tz_production.dart
       - name: Build production release APK
-        script: flutter build apk --release --target=lib/production_main.dart
+        script: flutter build apk --release --target=lib/tz_production.dart
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
 
@@ -33,14 +31,12 @@ workflows:
         script: flutter create --platforms=ios .
       - name: Restore Temz Store logo
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
-      - name: Apply production UI patches
-        script: python3 tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
-      - name: Analyze production Dart code
-        script: flutter analyze lib/production_main.dart
-      - name: Build iOS release without signing
-        script: flutter build ipa --release --no-codesign --target=lib/production_main.dart
+      - name: Analyze clean production Dart code
+        script: flutter analyze lib/tz_production.dart
+      - name: Build iOS production IPA
+        script: flutter build ipa --release --no-codesign --target=lib/tz_production.dart
     artifacts:
       - build/ios/ipa/*.ipa
 
@@ -55,14 +51,12 @@ workflows:
         script: flutter create --platforms=windows .
       - name: Restore Temz Store logo
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
-      - name: Apply production UI patches
-        script: python tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
-      - name: Analyze production Dart code
-        script: flutter analyze lib/production_main.dart
+      - name: Analyze clean production Dart code
+        script: flutter analyze lib/tz_production.dart
       - name: Build production Windows app
-        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/production_main.dart
+        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_production.dart
       - name: Package Windows bundle
         script: cd build/windows/x64/runner/Release; 7z a -r ../TZ-Windows.zip ./*
     artifacts:
