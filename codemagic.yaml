@@ -12,12 +12,10 @@ workflows:
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Fix TZ production source
-        script: python3 tool/fix_tz_source.py
-      - name: Analyze clean production Dart code
-        script: flutter analyze lib/tz_production.dart
+      - name: Analyze TZ build code
+        script: flutter analyze lib/tz_build.dart
       - name: Build production release APK
-        script: flutter build apk --release --target=lib/tz_production.dart
+        script: flutter build apk --release --target=lib/tz_build.dart
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
 
@@ -35,12 +33,10 @@ workflows:
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Fix TZ production source
-        script: python3 tool/fix_tz_source.py
-      - name: Analyze clean production Dart code
-        script: flutter analyze lib/tz_production.dart
+      - name: Analyze TZ build code
+        script: flutter analyze lib/tz_build.dart
       - name: Build iOS production IPA
-        script: flutter build ipa --release --no-codesign --target=lib/tz_production.dart
+        script: flutter build ipa --release --no-codesign --target=lib/tz_build.dart
     artifacts:
       - build/ios/ipa/*.ipa
 
@@ -57,12 +53,10 @@ workflows:
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
       - name: Install dependencies
         script: flutter pub get
-      - name: Fix TZ production source
-        script: python tool/fix_tz_source.py
-      - name: Analyze clean production Dart code
-        script: flutter analyze lib/tz_production.dart
+      - name: Analyze TZ build code
+        script: flutter analyze lib/tz_build.dart
       - name: Build production Windows app
-        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_production.dart
+        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
       - name: Package Windows bundle
         script: cd build/windows/x64/runner/Release; 7z a -r ../TZ-Windows.zip ./*
     artifacts:
