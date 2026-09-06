@@ -14,6 +14,8 @@ workflows:
         script: python3 tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
+      - name: Analyze production Dart code
+        script: flutter analyze lib/production_main.dart
       - name: Build production release APK
         script: flutter build apk --release --target=lib/production_main.dart
     artifacts:
@@ -35,6 +37,8 @@ workflows:
         script: python3 tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
+      - name: Analyze production Dart code
+        script: flutter analyze lib/production_main.dart
       - name: Build iOS release without signing
         script: flutter build ipa --release --no-codesign --target=lib/production_main.dart
     artifacts:
@@ -55,6 +59,8 @@ workflows:
         script: python tool/prepare_production.py
       - name: Install dependencies
         script: flutter pub get
+      - name: Analyze production Dart code
+        script: flutter analyze lib/production_main.dart
       - name: Build production Windows app
         script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/production_main.dart
       - name: Package Windows bundle
