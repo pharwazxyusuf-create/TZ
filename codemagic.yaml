@@ -20,6 +20,8 @@ workflows:
         script: python3 tool/agent_registration_fix.py
       - name: Apply parser-safe agent build fix
         script: python3 tool/agent_registration_fix2.py
+      - name: Apply password recovery fix
+        script: python3 tool/recovery_flow_fix.py
       - name: Analyze TZ build code
         script: flutter analyze lib/tz_build.dart
       - name: Build production release APK
@@ -49,6 +51,8 @@ workflows:
         script: python3 tool/agent_registration_fix.py
       - name: Apply parser-safe agent build fix
         script: python3 tool/agent_registration_fix2.py
+      - name: Apply password recovery fix
+        script: python3 tool/recovery_flow_fix.py
       - name: Analyze TZ build code
         script: flutter analyze lib/tz_build.dart
       - name: Build production iOS IPA
@@ -77,8 +81,10 @@ workflows:
         script: python tool/agent_registration_fix.py
       - name: Apply parser-safe agent build fix
         script: python tool/agent_registration_fix2.py
+      - name: Apply password recovery fix
+        script: python tool/recovery_flow_fix.py
       - name: Analyze TZ build code
-        script: python -c "from pathlib import Path; print('Final registration fix present:', Path('tool/agent_registration_fix2.py').exists())"
+        script: python -c "from pathlib import Path; print('Recovery fix present:', Path('tool/recovery_flow_fix.py').exists())"
       - name: Build production Windows app
         script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
       - name: Package Windows bundle
