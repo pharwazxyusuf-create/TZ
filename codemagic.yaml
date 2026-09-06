@@ -6,10 +6,13 @@ workflows:
     environment:
       flutter: stable
     scripts:
+      - name: Generate Android project files
+        script: flutter create --platforms=android .
       - name: Build APK
         script: flutter pub get && flutter build apk --debug
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
+
   windows:
     name: TZ Windows EXE
     max_build_duration: 60
@@ -17,6 +20,8 @@ workflows:
     environment:
       flutter: stable
     scripts:
+      - name: Generate Windows project files
+        script: flutter create --platforms=windows .
       - name: Build Windows
         script: flutter pub get && flutter config --enable-windows-desktop && flutter build windows --release
     artifacts:
