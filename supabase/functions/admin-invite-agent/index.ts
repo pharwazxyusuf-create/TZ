@@ -33,11 +33,7 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const { data: caller, error: callerError } = await admin
-      .from('profiles')
-      .select('id,role')
-      .eq('id', user.id)
-      .maybeSingle()
+    const { data: caller, error: callerError } = await admin.from('profiles').select('id,role').eq('id', user.id).maybeSingle()
     if (callerError) throw callerError
     if (caller?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: cors })
@@ -52,27 +48,36 @@ Deno.serve(async (req) => {
     if (!email || !email.includes('@')) throw new Error('A valid agent email is required')
     if (!fullName) throw new Error('Agent name is required')
 
-    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    const metadata = { full_name: fullName, role: 'agent', phone, state, must_set_password: true }
+    let linkData: any = null
+    let linkError: any = null
+
+    // New agents use a one-time invite link. If this email already has an Auth account,
+    // fall back to a one-time magic link so the admin can refresh the agent's access link.
+    ({ data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: 'invite',
       email,
-      options: {
-        redirectTo,
-        data: {
-          full_name: fullName,
-          role: 'agent',
-          phone,
-          state,
-          must_set_password: true,
-        },
-      },
-    })
-    if (linkError) throw linkError
+      options: { redirectTo, data: metadata },
+    }))
 
-    const invitedUser = linkData.user
-    if (!invitedUser) throw new Error('Agent account was not created')
+    if (linkError) {
+      ({ data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+        options: { redirectTo, data: metadata },
+      }))
+      if (linkError) throw linkError
+    }
+
+    const agentUser = linkData?.user
+    if (!agentUser) throw new Error('Agent account could not be created or found')
+
+    // Keep the Auth metadata current even when the magic-link fallback was used.
+    const { error: authUpdateError } = await admin.auth.admin.updateUserById(agentUser.id, { user_metadata: metadata })
+    if (authUpdateError) throw authUpdateError
 
     const { error: profileError } = await admin.from('profiles').upsert({
-      id: invitedUser.id,
+      id: agentUser.id,
       full_name: fullName,
       email,
       phone: phone || null,
@@ -85,19 +90,22 @@ Deno.serve(async (req) => {
 
     await admin.from('audit_logs').insert({
       actor_id: user.id,
-      action: 'agent_invited',
+      action: 'agent_access_link_created',
       entity_type: 'profile',
-      entity_id: invitedUser.id,
+      entity_id: agentUser.id,
       details: { email, full_name: fullName, state },
     })
 
+    const actionLink = linkData?.properties?.action_link ?? linkData?.properties?.actionLink
+    if (!actionLink) throw new Error('Supabase did not return an access link')
+
     return new Response(JSON.stringify({
       ok: true,
-      agent_id: invitedUser.id,
+      agent_id: agentUser.id,
       email,
-      action_link: linkData.properties?.action_link ?? linkData.properties?.actionLink,
+      action_link: actionLink,
       redirect_to: redirectTo,
-      message: 'Agent link created. Share it with the agent. The link is time-limited by Supabase Auth.',
+      message: 'Agent access link created. Share it privately. It is time-limited and the agent will be asked to set a personal password.',
     }), { status: 200, headers: cors })
   } catch (error) {
     console.error(error)
