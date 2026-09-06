@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _navy = Color(0xFF071B3A);
 const _blue = Color(0xFF1264E8);
-const _authRedirect = 'tz://auth-callback/';
+const _authRedirect = 'https://temz.ng/tz-auth/';
 
 const _adminEmails = {
   'pharwazxyusuf@gmail.com',
@@ -45,7 +45,7 @@ class _AdminSetupPageState extends State<AdminSetupPage> {
       );
       if (!mounted) return;
       if (res.session == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account created. Open the confirmation email on this phone. TZ will reopen automatically after confirmation.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account created. Check your email. The confirmation link will take you to the Temz confirmation page and then back to TZ.')));
         Navigator.pop(context);
       } else {
         Navigator.pop(context);
@@ -62,25 +62,20 @@ class _AdminSetupPageState extends State<AdminSetupPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('First-time Admin Setup')),
-    body: ListView(
-      padding: const EdgeInsets.all(22),
-      children: [
-        const Text('Create your TZ administrator account', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _navy)),
-        const SizedBox(height: 8),
-        const Text('Use one of the three approved Temz Store administrator emails.'),
-        const SizedBox(height: 20),
-        TextField(controller: name, decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline))),
-        const SizedBox(height: 14),
-        TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Administrator email', prefixIcon: Icon(Icons.email_outlined))),
-        const SizedBox(height: 14),
-        TextField(controller: password, obscureText: hidden, decoration: InputDecoration(labelText: 'Password (8+ characters)', prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(onPressed: () => setState(() => hidden = !hidden), icon: Icon(hidden ? Icons.visibility : Icons.visibility_off)))),
-        const SizedBox(height: 14),
-        TextField(controller: confirm, obscureText: hidden, decoration: const InputDecoration(labelText: 'Confirm password', prefixIcon: Icon(Icons.verified_user_outlined))),
-        const SizedBox(height: 22),
-        SizedBox(height: 52, child: FilledButton(onPressed: busy ? null : create, child: busy ? const CircularProgressIndicator(color: Colors.white) : const Text('CREATE ADMIN ACCOUNT'))),
-        const SizedBox(height: 12),
-        const Text('Confirmation will return to TZ automatically when the mobile redirect is configured.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-      ],
-    ),
+    body: ListView(padding: const EdgeInsets.all(22), children: [
+      const Text('Create your TZ administrator account', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _navy)),
+      const SizedBox(height: 8),
+      const Text('Use one of the three approved Temz Store administrator emails.'),
+      const SizedBox(height: 20),
+      TextField(controller: name, decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline))),
+      const SizedBox(height: 14),
+      TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Administrator email', prefixIcon: Icon(Icons.email_outlined))),
+      const SizedBox(height: 14),
+      TextField(controller: password, obscureText: hidden, decoration: InputDecoration(labelText: 'Password (8+ characters)', prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(onPressed: () => setState(() => hidden = !hidden), icon: Icon(hidden ? Icons.visibility : Icons.visibility_off)))),
+      const SizedBox(height: 14),
+      TextField(controller: confirm, obscureText: hidden, decoration: const InputDecoration(labelText: 'Confirm password', prefixIcon: Icon(Icons.verified_user_outlined))),
+      const SizedBox(height: 22),
+      SizedBox(height: 52, child: FilledButton(onPressed: busy ? null : create, child: busy ? const CircularProgressIndicator(color: Colors.white) : const Text('CREATE ADMIN ACCOUNT'))),
+    ]),
   );
 }
