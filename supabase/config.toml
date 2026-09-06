@@ -1,0 +1,7 @@
+project_id = "xztnrpfrrqfxqfmboruc"
+
+[functions.wp-order-webhook]
+verify_jwt = false
+
+[functions.agent-reminders]
+verify_jwt = false
