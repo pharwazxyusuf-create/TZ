@@ -1,99 +1,38 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const TZ());
+const adminEmails = <String>{'pharwazxyusuf@gmail.com','mytemzbusiness@gmail.com','omolaratemilade567@gmail.com'};
+const adminDemoPassword = 'TZ2026!';
+const agentDemoEmail = 'agent@temz.ng';
+const agentDemoPassword = 'Agent2026!';
+const phoneNumber = '09012533620';
+const logoData = 'UklGRuQwAABXRUJQVlA4IBgAAAAwAQCdASoIAAgAAkA4JYwCdAD0CwB1gAAAP7/7QAAAAAA';
+Uint8List get logoBytes => base64Decode(logoData);
 
-class TZ extends StatelessWidget {
-  const TZ({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'TZ - Temz Store',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-      home: const Login(),
-    );
-  }
-}
-
-class Login extends StatelessWidget {
-  const Login({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'TZ',
-                  style: TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text('TEMZ STORE', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 30),
-              const TextField(
-                decoration: InputDecoration(labelText: 'Email or phone', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              const TextField(
-                obscureText: true,
-                decoration: InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Dashboard()),
-                  ),
-                  child: const Text('LOGIN'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class Dashboard extends StatelessWidget {
-  const Dashboard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('TZ Dashboard')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text('Good day, Admin', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          const Card(child: ListTile(title: Text('New Orders'), trailing: Text('12'))),
-          const Card(child: ListTile(title: Text('Awaiting Update'), trailing: Text('7'))),
-          const Card(child: ListTile(title: Text('Delivered'), trailing: Text('31'))),
-          const Card(child: ListTile(title: Text('Awaiting Remittance'), trailing: Text('5'))),
-          const SizedBox(height: 20),
-          const Text('Recent Orders', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Card(child: ListTile(title: Text('TZ-000124'), subtitle: Text('Motion Sensor Light x 2'))),
-          const Card(child: ListTile(title: Text('TZ-000123'), subtitle: Text('Posture Corrector x 1 + Anti-Snoring Device x 1'))),
-        ],
-      ),
-    );
-  }
-}
+class Product { Product(this.name,this.price,this.central); String name; double price; int central; }
+class Agent { Agent(this.name,this.phone,this.state,{this.available=true}); String name,phone,state; bool available; Map<String,int> stock={}; }
+class Order { Order({required this.id,required this.customer,required this.phone,required this.state,required this.city,required this.address,required this.items,required this.total,this.status='New Order',this.agent='',this.scheduledDate='',this.amountCharged=0,this.amountRemitted=0,this.extraCharge=0,this.extraReason='',this.paymentMethod=''}); String id,customer,phone,state,city,address,status,agent,scheduledDate,extraReason,paymentMethod; List<Map<String,dynamic>> items; double total,amountCharged,amountRemitted,extraCharge; }
+final products=<Product>[Product('Motion Sensor Light',18000,120),Product('Electronic Posture Corrector',22000,75),Product('Anti-Snoring Device',12000,90),Product('Creative 3D Visualization Lamp',20000,60)];
+final agents=<Agent>[Agent('Demo Agent','08000000000','Lagos')..stock={'Motion Sensor Light':10,'Electronic Posture Corrector':5,'Anti-Snoring Device':5,'Creative 3D Visualization Lamp':2}];
+final orders=<Order>[Order(id:'TZ-000124',customer:'Aisha Bello',phone:'08011112222',state:'Lagos',city:'Ikeja',address:'12 Allen Avenue, Ikeja',items:[{'name':'Motion Sensor Light','qty':2}],total:36000,status:'Out for Delivery',agent:'Demo Agent'),Order(id:'TZ-000123',customer:'Yusuf Ade',phone:'08033334444',state:'Ogun',city:'Abeokuta',address:'15 Oke-Igbein, Abeokuta',items:[{'name':'Electronic Posture Corrector','qty':1},{'name':'Anti-Snoring Device','qty':1}],total:34000,status:'Customer Chose Another Day',agent:'Demo Agent',scheduledDate:'2026-09-08')];
+const statuses=<String>['New Order','Awaiting Agent Acceptance','Accepted','Out for Delivery','Customer Not Available','Unable to Meet Up','Customer Chose Another Day','Delivered','Cancelled'];
+void main()=>runApp(const TZApp());
+class TZApp extends StatelessWidget{const TZApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(debugShowCheckedModeBanner:false,title:'TZ - Temz Store',theme:ThemeData(useMaterial3:true,colorScheme:ColorScheme.fromSeed(seedColor:const Color(0xFF0759D6)),scaffoldBackgroundColor:const Color(0xFFF7F9FC)),home:const LoginPage());}
+class LoginPage extends StatefulWidget{const LoginPage({super.key});@override State<LoginPage> createState()=>_LoginState();}
+class _LoginState extends State<LoginPage>{final e=TextEditingController(),p=TextEditingController();bool hide=true;void login(){final email=e.text.trim().toLowerCase();final ok=(adminEmails.contains(email)&&p.text==adminDemoPassword)||(email==agentDemoEmail&&p.text==agentDemoPassword);if(!ok){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Invalid email or password')));return;}Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>Home(role:email==agentDemoEmail?'Agent':'Admin')));} @override Widget build(BuildContext c)=>Scaffold(body:SafeArea(child:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(24),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:430),child:Column(children:[Image.memory(logoBytes,width:190,height:190),const Text('TZ',style:TextStyle(fontSize:34,fontWeight:FontWeight.w900)),const Text('Temz Store Operations',style:TextStyle(fontSize:18)),const SizedBox(height:28),TextField(controller:e,decoration:const InputDecoration(labelText:'Email',prefixIcon:Icon(Icons.email_outlined),border:OutlineInputBorder())),const SizedBox(height:14),TextField(controller:p,obscureText:hide,decoration:InputDecoration(labelText:'Password',prefixIcon:const Icon(Icons.lock_outline),border:const OutlineInputBorder(),suffixIcon:IconButton(onPressed:()=>setState(()=>hide=!hide),icon:Icon(hide?Icons.visibility:Icons.visibility_off)))),const SizedBox(height:20),SizedBox(width:double.infinity,height:52,child:FilledButton(onPressed:login,child:const Text('LOGIN'))),const SizedBox(height:12),const Text('Admin test password: TZ2026!',style:TextStyle(fontSize:12,color:Colors.grey))]))))));}}
+class Home extends StatefulWidget{const Home({super.key,required this.role});final String role;@override State<Home> createState()=>_HomeState();}
+class _HomeState extends State<Home>{int tab=0;final labels=['Dashboard','Orders','Agents','Stock','Receipts','Settings'];Widget page(){switch(tab){case 1:return OrdersPage(role:widget.role,onChanged:()=>setState((){}));case 2:return AgentsPage(onChanged:()=>setState((){}));case 3:return const StockPage();case 4:return const ReceiptsPage();case 5:return const SettingsPage();default:return Dashboard(role:widget.role);}}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text('TZ • ${labels[tab]}')),drawer:Drawer(child:SafeArea(child:Column(children:[Padding(padding:const EdgeInsets.all(18),child:Row(children:[Image.memory(logoBytes,width:60,height:60),const SizedBox(width:12),const Text('TEMZ STORE',style:TextStyle(fontWeight:FontWeight.w900,fontSize:18))])),const Divider(),...List.generate(labels.length,(i)=>ListTile(selected:i==tab,leading:Icon([Icons.dashboard,Icons.receipt_long,Icons.groups,Icons.inventory_2,Icons.receipt,Icons.settings][i]),title:Text(labels[i]),onTap:(){setState(()=>tab=i);Navigator.pop(c);})),const Spacer(),ListTile(leading:const Icon(Icons.logout),title:const Text('Log out'),onTap:()=>Navigator.pushAndRemoveUntil(c,MaterialPageRoute(builder:(_)=>const LoginPage()),(_)=>false))])),body:page());}
+class Dashboard extends StatelessWidget{const Dashboard({super.key,required this.role});final String role;@override Widget build(BuildContext c){int n(String s)=>orders.where((o)=>o.status==s).length;return ListView(padding:const EdgeInsets.all(16),children:[Text('Good day, $role',style:const TextStyle(fontSize:27,fontWeight:FontWeight.w900)),const SizedBox(height:5),const Text('Temz Store operations at a glance.',style:TextStyle(color:Colors.grey)),const SizedBox(height:18),Wrap(spacing:10,runSpacing:10,children:[_s('New Orders',n('New Order')+n('Awaiting Agent Acceptance')),_s('Out for Delivery',n('Out for Delivery')),_s('Delivered',n('Delivered')),_s('Postponed',n('Customer Chose Another Day')),_s('Cancelled',n('Cancelled')),_s('Awaiting Remittance',orders.where((o)=>o.status=='Delivered'&&o.amountRemitted<o.amountCharged).length)]),const SizedBox(height:24),const Text('Recent orders',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold)),...orders.take(5).map((o)=>Card(child:ListTile(title:Text(o.id),subtitle:Text('${o.customer} • ${o.status}'),trailing:Text('₦${o.total.toStringAsFixed(0)}'))))];}Widget _s(String t,int n)=>SizedBox(width:175,child:Card(child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t,style:const TextStyle(color:Colors.grey)),const SizedBox(height:7),Text('$n',style:const TextStyle(fontSize:27,fontWeight:FontWeight.w900))]))));}}
+class OrdersPage extends StatefulWidget{const OrdersPage({super.key,required this.role,required this.onChanged});final String role;final VoidCallback onChanged;@override State<OrdersPage> createState()=>_OrdersState();}
+class _OrdersState extends State<OrdersPage>{String filter='All';final q=TextEditingController();@override Widget build(BuildContext c){final list=orders.where((o)=>(filter=='All'||o.status==filter)&&('${o.id} ${o.customer} ${o.phone}'.toLowerCase().contains(q.text.toLowerCase()))).toList();return Scaffold(body:Column(children:[Padding(padding:const EdgeInsets.all(12),child:TextField(controller:q,onChanged:(_)=>setState((){}),decoration:const InputDecoration(prefixIcon:Icon(Icons.search),hintText:'Search order, customer or phone',border:OutlineInputBorder()))),SingleChildScrollView(scrollDirection:Axis.horizontal,child:Row(children:['All',...statuses].map((s)=>Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:ChoiceChip(label:Text(s,style:const TextStyle(fontSize:11)),selected:filter==s,onSelected:(_)=>setState(()=>filter=s)))).toList())),Expanded(child:ListView.builder(itemCount:list.length,itemBuilder:(c,i){final o=list[i];return Card(child:ListTile(onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>OrderDetail(order:o,role:widget.role))).then((_){setState((){});widget.onChanged();}),title:Text(o.id,style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${o.customer}\n${o.city}, ${o.state} • ${o.agent.isEmpty?'Unassigned':o.agent}'),isThreeLine:true,trailing:Text(o.status,style:const TextStyle(fontSize:10)));}))],),floatingActionButton:widget.role=='Admin'?FloatingActionButton.extended(onPressed:()=>showDialog(context:c,builder:(_)=>const NewOrderDialog()),label:const Text('New Order'),icon:const Icon(Icons.add)):null);}}
+class NewOrderDialog extends StatefulWidget{const NewOrderDialog({super.key});@override State<NewOrderDialog> createState()=>_NewOrderState();}
+class _NewOrderState extends State<NewOrderDialog>{final name=TextEditingController(),phone=TextEditingController(),state=TextEditingController(),city=TextEditingController(),address=TextEditingController();Product? product;int qty=1;@override Widget build(BuildContext c)=>AlertDialog(title:const Text('New Order'),content:SizedBox(width:500,child:SingleChildScrollView(child:Column(children:[_f(name,'Customer name'),_f(phone,'Customer phone'),_f(state,'State'),_f(city,'City'),_f(address,'Delivery address'),DropdownButtonFormField<Product>(value:product,items:products.map((p)=>DropdownMenuItem(value:p,child:Text(p.name))).toList(),onChanged:(v)=>setState(()=>product=v),decoration:const InputDecoration(labelText:'Product',border:OutlineInputBorder())),TextField(keyboardType:TextInputType.number,onChanged:(v)=>qty=int.tryParse(v)??1,decoration:const InputDecoration(labelText:'Quantity',border:OutlineInputBorder()))]))),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel')),FilledButton(onPressed:product==null?null:(){orders.insert(0,Order(id:'TZ-${(orders.length+125).toString().padLeft(6,'0')}',customer:name.text,phone:phone.text,state:state.text,city:city.text,address:address.text,items:[{'name':product!.name,'qty':qty}],total:product!.price*qty));Navigator.pop(c);},child:const Text('Create'))]);Widget _f(TextEditingController x,String l)=>Padding(padding:const EdgeInsets.only(bottom:9),child:TextField(controller:x,decoration:InputDecoration(labelText:l,border:const OutlineInputBorder())));}
+class OrderDetail extends StatefulWidget{const OrderDetail({super.key,required this.order,required this.role});final Order order;final String role;@override State<OrderDetail> createState()=>_OrderDetailState();}
+class _OrderDetailState extends State<OrderDetail>{Order get o=>widget.order;void status(String s){setState(()=>o.status=s);}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text(o.id)),body:ListView(padding:const EdgeInsets.all(16),children:[Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(o.customer,style:const TextStyle(fontSize:23,fontWeight:FontWeight.bold)),Text(o.phone),const SizedBox(height:10),Text('${o.address}\n${o.city}, ${o.state}'),Text('Agent: ${o.agent.isEmpty?'Unassigned':o.agent}')])),Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Products',style:TextStyle(fontWeight:FontWeight.bold)),...o.items.map((x)=>ListTile(contentPadding:EdgeInsets.zero,title:Text(x['name']),trailing:Text('x ${x['qty']}'))),const Divider(),Text('Total: ₦${o.total.toStringAsFixed(0)}',style:const TextStyle(fontSize:20,fontWeight:FontWeight.w900))])),Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Status: ${o.status}',style:const TextStyle(fontWeight:FontWeight.bold)),if(o.scheduledDate.isNotEmpty)Text('Scheduled date: ${o.scheduledDate}'),const SizedBox(height:10),Wrap(spacing:8,runSpacing:8,children:[if(widget.role=='Admin'&&o.agent.isEmpty)FilledButton.tonal(onPressed:assign,child:const Text('Assign Agent')),if(widget.role=='Agent'&&o.status=='Awaiting Agent Acceptance')...[_b('Accept','Accepted'),_b('Reject','Awaiting Agent Acceptance')],if(widget.role=='Agent'&&['Accepted','Customer Chose Another Day'].contains(o.status))_b('Out for Delivery','Out for Delivery'),if(widget.role=='Agent'&&o.status=='Out for Delivery')...[_b('Delivered','Delivered'),_b('Customer Not Available','Customer Not Available'),_b('Unable to Meet Up','Unable to Meet Up'),_b('Deliver Another Day','Customer Chose Another Day'),_b('Cancelled','Cancelled')],if(o.status=='Delivered')...[_b('Payment / Remittance','PAYMENT'),FilledButton.tonal(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>ReceiptPage(order:o))),child:const Text('Generate Customer Receipt'))])]))]));Widget _b(String t,String s)=>FilledButton.tonal(onPressed:(){if(s=='PAYMENT')payment();else if(s=='Customer Chose Another Day')postpone();else{status(s);if(s=='Delivered')deduct();}},child:Text(t));void assign(){showDialog(context:context,builder:(_)=>SimpleDialog(title:const Text('Assign agent'),children:agents.where((a)=>a.available).map((a)=>SimpleDialogOption(onPressed:(){setState((){o.agent=a.name;o.status='Awaiting Agent Acceptance';});Navigator.pop(context);},child:Text('${a.name} • ${a.state}'))).toList()));}void postpone(){final d=TextEditingController();showDialog(context:context,builder:(_)=>AlertDialog(title:const Text('Choose new delivery date'),content:TextField(controller:d,decoration:const InputDecoration(hintText:'YYYY-MM-DD')),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Cancel')),FilledButton(onPressed:(){o.scheduledDate=d.text;status('Customer Chose Another Day');Navigator.pop(context);},child:const Text('Save'))]));}void deduct(){final a=agents.firstWhere((a)=>a.name==o.agent,orElse:()=>agents.first);for(final x in o.items){final k=x['name'] as String;final q=x['qty'] as int;a.stock[k]=(a.stock[k]??0)-q;}}void payment(){final charged=TextEditingController(text:o.amountCharged==0?'${o.total}':'${o.amountCharged}');final remitted=TextEditingController(text:'${o.amountRemitted}');String method=o.paymentMethod.isEmpty?'Cash':o.paymentMethod;showDialog(context:context,builder:(_)=>StatefulBuilder(builder:(c,set)=>AlertDialog(title:const Text('Payment & Remittance'),content:Column(mainAxisSize:MainAxisSize.min,children:[TextField(controller:charged,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'Amount charged')),TextField(controller:remitted,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'Amount remitted')),DropdownButton<String>(value:method,items:['Cash','Bank Transfer'].map((x)=>DropdownMenuItem(value:x,child:Text(x))).toList(),onChanged:(x)=>set(()=>method=x!))]),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel')),FilledButton(onPressed:(){o.amountCharged=double.tryParse(charged.text)??o.total;o.amountRemitted=double.tryParse(remitted.text)??0;o.paymentMethod=method;setState((){});Navigator.pop(c);},child:const Text('Save'))])));}}
+class AgentsPage extends StatefulWidget{const AgentsPage({super.key,required this.onChanged});final VoidCallback onChanged;@override State<AgentsPage> createState()=>_AgentsState();}class _AgentsState extends State<AgentsPage>{@override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('Agents',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),...agents.map((a)=>Card(child:ListTile(title:Text(a.name),subtitle:Text('${a.phone} • ${a.state}\n${a.available?'Available':'Unavailable'}'),isThreeLine:true,trailing:Switch(value:a.available,onChanged:(v){setState(()=>a.available=v);widget.onChanged();}),onTap:()=>showDialog(context:c,builder:(_)=>AgentStockDialog(agent:a))))]);}}
+class AgentStockDialog extends StatelessWidget{const AgentStockDialog({super.key,required this.agent});final Agent agent;@override Widget build(BuildContext c)=>AlertDialog(title:Text('${agent.name} stock'),content:SingleChildScrollView(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:products.map((p)=>Padding(padding:const EdgeInsets.symmetric(vertical:5),child:Text('${p.name}: ${agent.stock[p.name]??0}'))).toList())),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]);}
+class StockPage extends StatelessWidget{const StockPage({super.key});@override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('Central Stock',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),...products.map((p)=>Card(child:ListTile(title:Text(p.name),subtitle:Text('Selling price: ₦${p.price.toStringAsFixed(0)}'),trailing:Text('${p.central}',style:const TextStyle(fontSize:20,fontWeight:FontWeight.bold)))),const SizedBox(height:18),const Text('Agent Stock / Custody',style:TextStyle(fontSize:20,fontWeight:FontWeight.bold)),...agents.map((a)=>Card(child:ListTile(title:Text(a.name),subtitle:Text(a.stock.entries.map((e)=>'${e.key}: ${e.value}').join('\n')))))]);}
+class ReceiptsPage extends StatelessWidget{const ReceiptsPage({super.key});@override Widget build(BuildContext c){final d=orders.where((o)=>o.status=='Delivered');return ListView(padding:const EdgeInsets.all(16),children:[const Text('Customer Receipts',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),...d.map((o)=>Card(child:ListTile(title:Text('${o.id} • ${o.customer}'),subtitle:const Text('Paid receipt'),onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>ReceiptPage(order:o)))))]);}}
+class ReceiptPage extends StatelessWidget{const ReceiptPage({super.key,required this.order});final Order order;@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('Customer Receipt')),body:Center(child:SingleChildScrollView(padding:const EdgeInsets.all(18),child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:520),child:Card(child:Padding(padding:const EdgeInsets.all(24),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Center(child:Image.memory(logoBytes,width:145,height:145)),const Center(child:Text('TEMZ STORE',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900))),const Center(child:Text(phoneNumber)),const Divider(height:30),Text('Receipt No: RCP-${order.id.substring(3)}',style:const TextStyle(fontWeight:FontWeight.bold)),Text('TZ Order No: ${order.id}'),Text('Date: ${DateTime.now().toString().substring(0,16)}'),const SizedBox(height:12),Text(order.customer,style:const TextStyle(fontWeight:FontWeight.bold)),Text(order.phone),Text(order.address),Text('${order.city}, ${order.state}'),const SizedBox(height:12),...order.items.map((x)=>Text('${x['name']} x ${x['qty']}')),const Divider(),Text('TOTAL PAID: ₦${order.total.toStringAsFixed(0)}',style:const TextStyle(fontSize:20,fontWeight:FontWeight.w900)),Text('Payment Method: ${order.paymentMethod.isEmpty?'Cash':order.paymentMethod}'),const SizedBox(height:18),Center(child:Container(padding:const EdgeInsets.symmetric(horizontal:28,vertical:10),decoration:BoxDecoration(border:Border.all(width:3),borderRadius:BorderRadius.circular(8)),child:const Text('PAID',style:TextStyle(fontSize:30,fontWeight:FontWeight.w900)))),const SizedBox(height:20),const Center(child:Text('Thank you for shopping with Temz Store!',textAlign:TextAlign.center))]))))));}}
+class SettingsPage extends StatelessWidget{const SettingsPage({super.key});@override Widget build(BuildContext c)=>ListView(padding:const EdgeInsets.all(16),children:[const Text('Settings',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),const Card(child:ListTile(leading:Icon(Icons.business),title:Text('Temz Store'),subtitle:Text('09012533620'))),const Card(child:ListTile(leading:Icon(Icons.admin_panel_settings),title:Text('Admin Management'),subtitle:Text('3 initial admin accounts; more can be added in production'))),const Card(child:ListTile(leading:Icon(Icons.notifications_active),title:Text('Agent reminders'),subtitle:Text('3-hour reminders until a final delivery outcome'))),const Card(child:ListTile(leading:Icon(Icons.cloud),title:Text('Production integrations'),subtitle:Text('WordPress order webhook, shared cloud database and push notifications must be connected before production release.')))]);}
