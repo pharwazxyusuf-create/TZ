@@ -2,9 +2,9 @@ from pathlib import Path
 import re
 
 # Final password recovery + OS password-manager integration.
-# Recovery must keep the Supabase recovery session alive until the dashboard
-# is reached. Login fields use Flutter autofill hints so Android/iOS password
-# managers can offer to save credentials securely.
+# Recovery keeps the Supabase recovery session alive until the dashboard is
+# reached. Login/new-password fields use Flutter autofill hints so Android/iOS
+# password managers can offer to save credentials securely.
 
 source = Path('lib/tz_build.dart')
 text = source.read_text()
@@ -13,6 +13,11 @@ password_file = Path('lib/password_pages.dart')
 pw = password_file.read_text()
 
 # Native callback: Supabase PKCE returns the recovery session directly to TZ.
+pw = pw.replace(
+    "import 'package:flutter/material.dart';",
+    "import 'package:flutter/material.dart';\nimport 'package:flutter/services.dart';",
+    1,
+)
 pw = pw.replace(
     "const _authRedirect = 'https://temz.ng/tz-auth/';",
     "const _authRedirect = 'tz://auth-callback/';"
@@ -34,10 +39,26 @@ pw = pw.replace(
     "TextField(controller: confirm, obscureText: hide, autofillHints: const [AutofillHints.newPassword], textInputAction: TextInputAction.done, decoration:"
 )
 
-# After changing a password, do NOT sign out. Keep the recovery session and
-# move directly into the normal profile/dashboard gate.
-old = """await _auth.auth.updateUser(UserAttributes(password: password.text));\n      if (mounted) {\n        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n        Navigator.pop(context);\n      }"""
-new = """await _auth.auth.updateUser(UserAttributes(password: password.text));\n      TextInput.finishAutofillContext(shouldSave: true);\n      if (mounted) {\n        if (widget.recoveryMode) {\n          Navigator.of(context).pushAndRemoveUntil(\n            MaterialPageRoute(builder: (_) => const ProfileGate()),\n            (route) => false,\n          );\n        } else {\n          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n          Navigator.pop(context);\n        }\n      }"""
+# After changing a password, keep the recovery session and move directly into
+# the normal profile/dashboard gate.
+old = """await _auth.auth.updateUser(UserAttributes(password: password.text));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));
+        Navigator.pop(context);
+      }"""
+new = """await _auth.auth.updateUser(UserAttributes(password: password.text));
+      TextInput.finishAutofillContext(shouldSave: true);
+      if (mounted) {
+        if (widget.recoveryMode) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const ProfileGate()),
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));
+          Navigator.pop(context);
+        }
+      }"""
 if old in pw:
     pw = pw.replace(old, new, 1)
 else:
@@ -100,12 +121,19 @@ new_text = new_text.replace(
 )
 
 # Ask the platform to commit the autofill context after successful sign-in.
-needle = """await db.auth.signInWithPassword(\n        email: email.text.trim().toLowerCase(),\n        password: password.text,\n      );"""
-replacement_login = """await db.auth.signInWithPassword(\n        email: email.text.trim().toLowerCase(),\n        password: password.text,\n      );\n      TextInput.finishAutofillContext(shouldSave: true);"""
+needle = """await db.auth.signInWithPassword(
+        email: email.text.trim().toLowerCase(),
+        password: password.text,
+      );"""
+replacement_login = """await db.auth.signInWithPassword(
+        email: email.text.trim().toLowerCase(),
+        password: password.text,
+      );
+      TextInput.finishAutofillContext(shouldSave: true);"""
 if needle in new_text:
     new_text = new_text.replace(needle, replacement_login, 1)
 else:
     raise SystemExit('Login block not found; refusing partial autofill patch.')
 
 source.write_text(new_text)
-print('Recovery fixed: password session is retained through reset, then user goes to ProfileGate/dashboard. OS password-manager autofill/save hints added to login and new-password fields.')
+print('Recovery fixed: password session retained through reset, then user goes to ProfileGate/dashboard. OS password-manager autofill/save hints added.')
