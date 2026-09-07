@@ -16,10 +16,6 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Finalize Supabase initialization
-        script: python3 tool/finalize_tz_build.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python3 tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release APK
@@ -45,10 +41,6 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Finalize Supabase initialization
-        script: python3 tool/finalize_tz_build.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python3 tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
@@ -68,13 +60,9 @@ workflows:
       - name: Restore Temz logo
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
       - name: Install dependencies
-        script: flutter pub get
+        script: python -m pip install --upgrade pip; flutter pub get
       - name: Repair TZ production source
         script: python tool/fix_tz_build.py
-      - name: Finalize Supabase initialization
-        script: python tool/finalize_tz_build.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
