@@ -9,6 +9,14 @@ import re
 source = Path('lib/tz_build.dart')
 text = source.read_text()
 
+# TextInput is used by the login form; import Flutter services in the generated
+# TZ source itself (not only in password_pages.dart).
+text = text.replace(
+    "import 'package:flutter/material.dart';",
+    "import 'package:flutter/material.dart';\nimport 'package:flutter/services.dart';",
+    1,
+)
+
 password_file = Path('lib/password_pages.dart')
 pw = password_file.read_text()
 
