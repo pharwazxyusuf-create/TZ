@@ -1,6 +1,6 @@
 name: tz
 publish_to: 'none'
-version: 1.0.0+13
+version: 1.0.0+14
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -10,6 +10,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.10.0
+  app_links: ^6.4.1
   url_launcher: ^6.3.2
   share_plus: ^11.1.0
   flutter_svg: ^2.2.1
