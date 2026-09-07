@@ -9,10 +9,34 @@ alter table public.profiles
   add constraint profiles_agent_approval_status_check
   check (agent_approval_status in ('pending','approved','rejected'));
 
--- New public signups marked as agent registrations enter the pending queue.
+-- New auth signups marked as agent registrations enter the pending queue.
+-- The three permanent Temz Store admin emails always remain admins.
 create or replace function public.tz_profile_bootstrap()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  is_admin_email boolean;
+  is_agent_registration boolean;
+  new_role public.user_role;
+  new_approval text;
+  new_available boolean;
 begin
+  is_admin_email := lower(new.email) in (
+    'pharwazxyusuf@gmail.com',
+    'mytemzbusiness@gmail.com',
+    'omolaratemilade567@gmail.com'
+  );
+  is_agent_registration := coalesce(new.raw_user_meta_data->>'registration_type','') = 'agent';
+
+  if is_admin_email then
+    new_role := 'admin'::public.user_role;
+    new_approval := 'approved';
+    new_available := true;
+  else
+    new_role := 'agent'::public.user_role;
+    new_approval := case when is_agent_registration then 'pending' else 'approved' end;
+    new_available := case when is_agent_registration then false else true end;
+  end if;
+
   insert into public.profiles(
     id, full_name, email, role, phone, state, agent_approval_status, available
   )
@@ -20,21 +44,24 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name',''),
     lower(new.email),
-    'agent',
+    new_role,
     nullif(new.raw_user_meta_data->>'phone',''),
     nullif(new.raw_user_meta_data->>'state',''),
-    case when coalesce(new.raw_user_meta_data->>'registration_type','') = 'agent' then 'pending' else 'approved' end,
-    case when coalesce(new.raw_user_meta_data->>'registration_type','') = 'agent' then false else true end
+    new_approval,
+    new_available
   )
   on conflict (id) do update set
     full_name = excluded.full_name,
     email = excluded.email,
     phone = excluded.phone,
-    state = excluded.state;
+    state = excluded.state,
+    role = case when excluded.role = 'admin' then 'admin'::public.user_role else public.profiles.role end,
+    agent_approval_status = case when excluded.role = 'admin' then 'approved' else public.profiles.agent_approval_status end,
+    available = case when excluded.role = 'admin' then true else public.profiles.available end,
+    updated_at = now();
   return new;
 end; $$;
 
--- Admin approves/rejects an agent. Rejection preserves the account/history.
 create or replace function public.tz_set_agent_approval(
   p_agent uuid,
   p_status text
@@ -54,7 +81,6 @@ begin
   values(auth.uid(), 'agent_approval_' || p_status, 'profile', p_agent, jsonb_build_object('status',p_status));
 end; $$;
 
--- Keep existing removal/restore behavior, but never restore an unapproved agent.
 create or replace function public.tz_set_agent_active(
   p_agent uuid,
   p_active boolean
