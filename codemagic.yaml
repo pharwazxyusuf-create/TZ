@@ -16,6 +16,8 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
+      - name: Restore auth and agent UI
+        script: python3 tool/restore_auth_ui.py
       - name: Apply password recovery fix
         script: python3 tool/recovery_flow_fix.py
       - name: Remove optional build-time TextInput calls
@@ -45,6 +47,8 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
+      - name: Restore auth and agent UI
+        script: python3 tool/restore_auth_ui.py
       - name: Apply password recovery fix
         script: python3 tool/recovery_flow_fix.py
       - name: Remove optional build-time TextInput calls
@@ -71,6 +75,8 @@ workflows:
         script: flutter pub get
       - name: Repair TZ production source
         script: python tool/fix_tz_build.py
+      - name: Restore auth and agent UI
+        script: python tool/restore_auth_ui.py
       - name: Apply password recovery fix
         script: python tool/recovery_flow_fix.py
       - name: Remove optional build-time TextInput calls
