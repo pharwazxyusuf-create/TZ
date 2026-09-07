@@ -1,34 +1,52 @@
 from pathlib import Path
 import re
 
-# Fix the password-recovery handoff for Android/iOS.
-# Supabase sends the recovery session back to the native app through the
-# registered tz://auth-callback/ deep link. The app then listens for the
-# passwordRecovery auth event and opens the password-change screen.
+# Final password recovery + OS password-manager integration.
+# Recovery must keep the Supabase recovery session alive until the dashboard
+# is reached. Login fields use Flutter autofill hints so Android/iOS password
+# managers can offer to save credentials securely.
 
 source = Path('lib/tz_build.dart')
 text = source.read_text()
 
-# Use the native callback directly for password recovery. This avoids the
-# intermediate web page swallowing the recovery session.
 password_file = Path('lib/password_pages.dart')
 pw = password_file.read_text()
-pw = pw.replace("const _authRedirect = 'https://temz.ng/tz-auth/';", "const _authRedirect = 'tz://auth-callback/';")
 
-# Let ChangePasswordPage tell the difference between a normal password change
-# and a password-recovery flow. In recovery mode, signing out after success
-# returns the user to the normal login screen.
+# Native callback: Supabase PKCE returns the recovery session directly to TZ.
+pw = pw.replace(
+    "const _authRedirect = 'https://temz.ng/tz-auth/';",
+    "const _authRedirect = 'tz://auth-callback/';"
+)
+
+# Recovery-aware password page.
 pw = pw.replace(
     "class ChangePasswordPage extends StatefulWidget {\n  const ChangePasswordPage({super.key});",
     "class ChangePasswordPage extends StatefulWidget {\n  final bool recoveryMode;\n  const ChangePasswordPage({super.key, this.recoveryMode = false});"
 )
+
+# Make new-password fields visible to the device password manager.
 pw = pw.replace(
-    "await _auth.auth.updateUser(UserAttributes(password: password.text));\n      if (mounted) {\n        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n        Navigator.pop(context);\n      }",
-    "await _auth.auth.updateUser(UserAttributes(password: password.text));\n      if (mounted) {\n        if (widget.recoveryMode) {\n          await _auth.auth.signOut();\n          Navigator.pop(context);\n        } else {\n          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n          Navigator.pop(context);\n        }\n      }"
+    "TextField(controller: password, obscureText: hide, decoration:",
+    "TextField(controller: password, obscureText: hide, autofillHints: const [AutofillHints.newPassword], textInputAction: TextInputAction.next, decoration:"
 )
+pw = pw.replace(
+    "TextField(controller: confirm, obscureText: hide, decoration:",
+    "TextField(controller: confirm, obscureText: hide, autofillHints: const [AutofillHints.newPassword], textInputAction: TextInputAction.done, decoration:"
+)
+
+# After changing a password, do NOT sign out. Keep the recovery session and
+# move directly into the normal profile/dashboard gate.
+old = """await _auth.auth.updateUser(UserAttributes(password: password.text));\n      if (mounted) {\n        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n        Navigator.pop(context);\n      }"""
+new = """await _auth.auth.updateUser(UserAttributes(password: password.text));\n      TextInput.finishAutofillContext(shouldSave: true);\n      if (mounted) {\n        if (widget.recoveryMode) {\n          Navigator.of(context).pushAndRemoveUntil(\n            MaterialPageRoute(builder: (_) => const ProfileGate()),\n            (route) => false,\n          );\n        } else {\n          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated successfully.')));\n          Navigator.pop(context);\n        }\n      }"""
+if old in pw:
+    pw = pw.replace(old, new, 1)
+else:
+    raise SystemExit('Expected password update block not found; refusing partial recovery patch.')
+
 password_file.write_text(pw)
 
-# Replace the simple AuthGate with a recovery-aware gate.
+# Recovery-aware AuthGate. The recovery session is retained; ChangePasswordPage
+# navigates to ProfileGate after the password is updated.
 pattern = re.compile(r"class AuthGate extends StatelessWidget \{.*?\n\}\n\nclass LoginPage", re.S)
 replacement = r'''class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -69,7 +87,25 @@ class _AuthGateState extends State<AuthGate> {
 class LoginPage'''
 new_text, count = pattern.subn(replacement, text, count=1)
 if count != 1:
-    raise SystemExit('AuthGate block not found; refusing to write a partial fix.')
-source.write_text(new_text)
+    raise SystemExit('AuthGate block not found; refusing to write a partial recovery fix.')
 
-print('Password recovery flow fixed: native tz:// callback + passwordRecovery event handling.')
+# Add OS password-manager autofill to the login form.
+new_text = new_text.replace(
+    "TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration:",
+    "TextField(controller: email, keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username], textInputAction: TextInputAction.next, decoration:"
+)
+new_text = new_text.replace(
+    "TextField(controller: password, obscureText: hidden, decoration:",
+    "TextField(controller: password, obscureText: hidden, autofillHints: const [AutofillHints.password], textInputAction: TextInputAction.done, decoration:"
+)
+
+# Ask the platform to commit the autofill context after successful sign-in.
+needle = """await db.auth.signInWithPassword(\n        email: email.text.trim().toLowerCase(),\n        password: password.text,\n      );"""
+replacement_login = """await db.auth.signInWithPassword(\n        email: email.text.trim().toLowerCase(),\n        password: password.text,\n      );\n      TextInput.finishAutofillContext(shouldSave: true);"""
+if needle in new_text:
+    new_text = new_text.replace(needle, replacement_login, 1)
+else:
+    raise SystemExit('Login block not found; refusing partial autofill patch.')
+
+source.write_text(new_text)
+print('Recovery fixed: password session is retained through reset, then user goes to ProfileGate/dashboard. OS password-manager autofill/save hints added to login and new-password fields.')
