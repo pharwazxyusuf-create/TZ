@@ -12,13 +12,9 @@ workflows:
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Configure Android auth and internet
+      - name: Configure Android platform
         script: python3 tool/prepare_platforms.py
-      - name: Repair TZ production source
-        script: python3 tool/fix_tz_build.py
-      - name: Finalize TZ auth and password flows
-        script: python3 tool/final_tz_auth_build.py
-      - name: Analyze TZ app source only
+      - name: Analyze clean TZ source
         script: flutter analyze lib/tz_build.dart
       - name: Build release APK
         script: flutter build apk --release --target=lib/tz_build.dart
@@ -39,13 +35,9 @@ workflows:
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Configure iOS auth callback
+      - name: Configure iOS platform
         script: python3 tool/prepare_platforms.py
-      - name: Repair TZ production source
-        script: python3 tool/fix_tz_build.py
-      - name: Finalize TZ auth and password flows
-        script: python3 tool/final_tz_auth_build.py
-      - name: Analyze TZ app source only
+      - name: Analyze clean TZ source
         script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
         script: flutter build ipa --release --no-codesign --target=lib/tz_build.dart
@@ -65,11 +57,9 @@ workflows:
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
       - name: Install dependencies
         script: python -m pip install --upgrade pip; flutter pub get
-      - name: Repair TZ production source
-        script: python tool/fix_tz_build.py
-      - name: Finalize TZ auth and password flows
-        script: python tool/final_tz_auth_build.py
-      - name: Analyze TZ app source only
+      - name: Configure Windows platform
+        script: python tool/prepare_platforms.py
+      - name: Analyze clean TZ source
         script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
         script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
