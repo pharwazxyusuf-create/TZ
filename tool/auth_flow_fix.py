@@ -3,20 +3,24 @@ from pathlib import Path
 p = Path('lib/tz_build.dart')
 s = p.read_text(encoding='utf-8')
 
-if "package:app_links/app_links.dart" not in s:
-    s = "import 'dart:async';\nimport 'package:app_links/app_links.dart';\n" + s
-
+# Use the supported Supabase Flutter 2 initialization shape.
 s = s.replace(
     'Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)',
-    'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authFlowType: AuthFlowType.pkce)',
+    'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authOptions: const FlutterAuthClientOptions(authFlowType: AuthFlowType.pkce))',
     1,
 )
 s = s.replace(
-    'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey)',
     'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authFlowType: AuthFlowType.pkce)',
+    'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authOptions: const FlutterAuthClientOptions(authFlowType: AuthFlowType.pkce))',
     1,
 )
+
+# Password reset emails first land on the Temz web bridge, which then opens the
+# native tz://auth-callback/ deep link with the Supabase recovery code.
 s = s.replace("redirectTo: 'tz://auth-callback/'", "redirectTo: 'https://temz.ng/tz-auth/'")
+
+if "package:app_links/app_links.dart" not in s:
+    s = "import 'dart:async';\nimport 'package:app_links/app_links.dart';\n" + s
 
 if 'Future<void> _initAuthDeepLinks() async {' not in s:
     marker = 'final SupabaseClient db = Supabase.instance.client;'
@@ -50,7 +54,7 @@ Future<void> _handleAuthDeepLink(Uri uri) async {
 Future<void> _initAuthDeepLinks() async {
   final links = AppLinks();
   try {
-    final initial = await links.getInitialAppLink();
+    final initial = await links.getInitialLink();
     if (initial != null) await _handleAuthDeepLink(initial);
   } catch (_) {}
   await _authLinkSubscription?.cancel();
@@ -66,33 +70,46 @@ Future<void> _initAuthDeepLinks() async {
 if 'await _initAuthDeepLinks();' not in s:
     s = s.replace('runApp(const TZApp());', 'await _initAuthDeepLinks();\n  runApp(const TZApp());', 1)
 
-# Replace AuthGate only once, preserving LoginPage/ProfileGate.
-a = s.find('class AuthGate extends StatelessWidget {')
+# Recovery-aware AuthGate. Do not reference the old SetNewPasswordPage name;
+# the current build uses RecoveryPasswordPage below.
+a = s.find('class AuthGate extends StatefulWidget {')
+if a < 0:
+    a = s.find('class AuthGate extends StatelessWidget {')
 b = s.find('class Logo extends StatelessWidget {', a)
 if a >= 0 and b > a:
     auth = r'''class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
-  @override State<AuthGate> createState() => _AuthGateState();
+  @override
+  State<AuthGate> createState() => _AuthGateState();
 }
 
 class _AuthGateState extends State<AuthGate> {
   bool recovery = _passwordRecoveryMode;
+
   @override
   void initState() {
     super.initState();
     db.auth.onAuthStateChange.listen((data) {
       if (!mounted) return;
-      if (data.event == AuthChangeEvent.passwordRecovery) setState(() => recovery = true);
-      if (data.event == AuthChangeEvent.signedOut) setState(() => recovery = false);
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        setState(() => recovery = true);
+      } else if (data.event == AuthChangeEvent.signedOut) {
+        setState(() => recovery = false);
+      }
     });
   }
+
   @override
   Widget build(BuildContext context) {
-    if (recovery && db.auth.currentSession != null) return const RecoveryPasswordPage();
+    if (recovery && db.auth.currentSession != null) {
+      return const RecoveryPasswordPage();
+    }
     return StreamBuilder<AuthState>(
       stream: db.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (recovery && db.auth.currentSession != null) return const RecoveryPasswordPage();
+        if (recovery && db.auth.currentSession != null) {
+          return const RecoveryPasswordPage();
+        }
         if (db.auth.currentSession == null) return const LoginPage();
         return const ProfileGate();
       },
@@ -103,11 +120,12 @@ class _AuthGateState extends State<AuthGate> {
 '''
     s = s[:a] + auth + s[b:]
 
-if 'class ChangePasswordPage extends StatefulWidget {' not in s:
+if 'class RecoveryPasswordPage extends StatefulWidget {' not in s:
     marker = 'class ProfileGate extends StatefulWidget {'
     pages = r'''class RecoveryPasswordPage extends StatefulWidget {
   const RecoveryPasswordPage({super.key});
-  @override State<RecoveryPasswordPage> createState() => _RecoveryPasswordPageState();
+  @override
+  State<RecoveryPasswordPage> createState() => _RecoveryPasswordPageState();
 }
 
 class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
@@ -115,6 +133,7 @@ class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
   final confirm = TextEditingController();
   bool busy = false;
   bool hidden = true;
+
   Future<void> save() async {
     if (password.text.length < 8 || password.text != confirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords must match and contain at least 8 characters.')));
@@ -128,17 +147,22 @@ class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const ProfileGate()), (_) => false);
     } on AuthException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally { if (mounted) setState(() => busy = false); }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Set New Password')),
     body: SafeArea(child: Center(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 430),
       child: Column(children: [
-        const Logo(size: 120), const SizedBox(height: 18),
+        const Logo(size: 120),
+        const SizedBox(height: 18),
         const Text('Set New Password', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: navy)),
-        const SizedBox(height: 8), const Text('Create a new password for your TZ account.', textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        const Text('Create a new password for your TZ account.', textAlign: TextAlign.center),
         const SizedBox(height: 24),
         TextField(controller: password, obscureText: hidden, decoration: InputDecoration(labelText: 'New password', prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(onPressed: () => setState(() => hidden = !hidden), icon: Icon(hidden ? Icons.visibility : Icons.visibility_off)))),
         const SizedBox(height: 14),
@@ -152,7 +176,8 @@ class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
-  @override State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+  @override
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
@@ -161,6 +186,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final confirm = TextEditingController();
   bool busy = false;
   bool hidden = true;
+
   Future<void> change() async {
     if (current.text.isEmpty || next.text.length < 8 || next.text != confirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter your current password and a matching new password of at least 8 characters.')));
@@ -168,21 +194,25 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     }
     setState(() => busy = true);
     try {
-      await db.auth.updateUser(UserAttributes(password: next.text, currentPassword: current.text));
+      await db.auth.updateUser(UserAttributes(password: next.text));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password changed successfully.')));
       Navigator.pop(context);
     } on AuthException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally { if (mounted) setState(() => busy = false); }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Change Password')),
     body: SafeArea(child: Center(child: SingleChildScrollView(padding: const EdgeInsets.all(24), child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 430),
       child: Column(children: [
-        const Logo(size: 100), const SizedBox(height: 18),
+        const Logo(size: 100),
+        const SizedBox(height: 18),
         const Text('Change Password', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900, color: navy)),
         const SizedBox(height: 22),
         TextField(controller: current, obscureText: hidden, decoration: const InputDecoration(labelText: 'Current password', prefixIcon: Icon(Icons.lock_outline))),
@@ -202,10 +232,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         raise SystemExit('ProfileGate marker not found')
     s = s.replace(marker, pages + marker, 1)
 
+# Add Change Password to the app drawer if a logout item exists.
 logout = "ListTile(leading: const Icon(Icons.logout), title: const Text('Log out'), onTap: () => db.auth.signOut()),"
 change_tile = "ListTile(leading: const Icon(Icons.password_outlined), title: const Text('Change Password'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordPage()))),"
 if logout in s and change_tile not in s:
     s = s.replace(logout, change_tile + '\n              ' + logout, 1)
 
 p.write_text(s, encoding='utf-8')
-print('Auth flow fixed: PKCE deep links, working password recovery, and signed-in password change.')
+print('Fixed Supabase PKCE initialization, app_links API, password recovery, and signed-in password change.')
