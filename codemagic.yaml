@@ -6,26 +6,18 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Generate Android project files
+      - name: Generate Android project
         script: flutter create --platforms=android .
-      - name: Restore Temz Store logo
+      - name: Restore Temz logo
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Apply final source fixes
-        script: python3 tool/fix_build.py
-      - name: Apply final auth and agent fixes
-        script: python3 tool/final_auth_fix.py
-      - name: Apply simple agent registration workflow
-        script: python3 tool/agent_registration_fix.py
-      - name: Apply parser-safe agent build fix
-        script: python3 tool/agent_registration_fix2.py
-      - name: Apply password recovery fix
-        script: python3 tool/recovery_flow_fix.py
-      - name: Analyze entire Flutter project
+      - name: Configure Android auth and internet
+        script: python3 tool/prepare_platforms.py
+      - name: Analyze complete TZ app
         script: flutter analyze
-      - name: Build production release APK
-        script: flutter build apk --release --target=lib/tz_build.dart
+      - name: Build release APK
+        script: flutter build apk --release --target=lib/tz_complete.dart
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
 
@@ -37,26 +29,18 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: Generate iOS project files
+      - name: Generate iOS project
         script: flutter create --platforms=ios .
-      - name: Restore Temz Store logo
+      - name: Restore Temz logo
         script: base64 -D -i assets/temz_logo.b64 -o assets/temz_logo.jpg
       - name: Install dependencies
         script: flutter pub get
-      - name: Apply final source fixes
-        script: python3 tool/fix_build.py
-      - name: Apply final auth and agent fixes
-        script: python3 tool/final_auth_fix.py
-      - name: Apply simple agent registration workflow
-        script: python3 tool/agent_registration_fix.py
-      - name: Apply parser-safe agent build fix
-        script: python3 tool/agent_registration_fix2.py
-      - name: Apply password recovery fix
-        script: python3 tool/recovery_flow_fix.py
-      - name: Analyze entire Flutter project
+      - name: Configure iOS auth callback
+        script: python3 tool/prepare_platforms.py
+      - name: Analyze complete TZ app
         script: flutter analyze
-      - name: Build production iOS IPA
-        script: flutter build ipa --release --no-codesign --target=lib/tz_build.dart
+      - name: Build release IPA
+        script: flutter build ipa --release --no-codesign --target=lib/tz_complete.dart
     artifacts:
       - build/ios/ipa/*.ipa
 
@@ -67,27 +51,17 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: Generate Windows project files
+      - name: Generate Windows project
         script: flutter create --platforms=windows .
-      - name: Restore Temz Store logo
+      - name: Restore Temz logo
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
       - name: Install dependencies
         script: flutter pub get
-      - name: Apply final source fixes
-        script: python tool/fix_build.py
-      - name: Apply final auth and agent fixes
-        script: python tool/final_auth_fix.py
-      - name: Apply simple agent registration workflow
-        script: python tool/agent_registration_fix.py
-      - name: Apply parser-safe agent build fix
-        script: python tool/agent_registration_fix2.py
-      - name: Apply password recovery fix
-        script: python tool/recovery_flow_fix.py
-      - name: Analyze entire Flutter project
+      - name: Analyze complete TZ app
         script: flutter analyze
-      - name: Build production Windows app
-        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
-      - name: Package Windows bundle
+      - name: Build release Windows app
+        script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_complete.dart
+      - name: Package Windows app
         script: cd build/windows/x64/runner/Release; 7z a -r ../TZ-Windows.zip ./*
     artifacts:
       - build/windows/x64/runner/TZ-Windows.zip
