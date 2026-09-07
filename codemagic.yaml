@@ -16,8 +16,10 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Finalize TZ authentication UI
+      - name: Finalize Supabase initialization
         script: python3 tool/finalize_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python3 tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release APK
@@ -43,8 +45,10 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Finalize TZ authentication UI
+      - name: Finalize Supabase initialization
         script: python3 tool/finalize_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python3 tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
@@ -67,8 +71,10 @@ workflows:
         script: flutter pub get
       - name: Repair TZ production source
         script: python tool/fix_tz_build.py
-      - name: Finalize TZ authentication UI
+      - name: Finalize Supabase initialization
         script: python tool/finalize_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python tool/restore_auth_ui.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
