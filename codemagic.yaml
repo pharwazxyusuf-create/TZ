@@ -16,6 +16,10 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python3 tool/restore_auth_ui.py
+      - name: Fix Supabase PKCE recovery and password change
+        script: python3 tool/auth_flow_fix.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release APK
@@ -41,6 +45,10 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python3 tool/restore_auth_ui.py
+      - name: Fix Supabase PKCE recovery and password change
+        script: python3 tool/auth_flow_fix.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
@@ -63,6 +71,10 @@ workflows:
         script: python -m pip install --upgrade pip; flutter pub get
       - name: Repair TZ production source
         script: python tool/fix_tz_build.py
+      - name: Restore login, forgot-password and agent registration UI
+        script: python tool/restore_auth_ui.py
+      - name: Fix Supabase PKCE recovery and password change
+        script: python tool/auth_flow_fix.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
