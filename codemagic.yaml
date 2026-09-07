@@ -16,8 +16,12 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Analyze TZ production entrypoint
-        script: flutter analyze lib/tz_build.dart
+      - name: Apply password recovery fix
+        script: python3 tool/recovery_flow_fix.py
+      - name: Remove optional build-time TextInput calls
+        script: python3 tool/build_safety_cleanup.py
+      - name: Analyze full TZ app
+        script: flutter analyze
       - name: Build release APK
         script: flutter build apk --release --target=lib/tz_build.dart
     artifacts:
@@ -41,8 +45,12 @@ workflows:
         script: python3 tool/prepare_platforms.py
       - name: Repair TZ production source
         script: python3 tool/fix_tz_build.py
-      - name: Analyze TZ production entrypoint
-        script: flutter analyze lib/tz_build.dart
+      - name: Apply password recovery fix
+        script: python3 tool/recovery_flow_fix.py
+      - name: Remove optional build-time TextInput calls
+        script: python3 tool/build_safety_cleanup.py
+      - name: Analyze full TZ app
+        script: flutter analyze
       - name: Build release IPA
         script: flutter build ipa --release --no-codesign --target=lib/tz_build.dart
     artifacts:
@@ -62,9 +70,13 @@ workflows:
       - name: Install dependencies
         script: flutter pub get
       - name: Repair TZ production source
-        script: python3 tool/fix_tz_build.py
-      - name: Analyze TZ production entrypoint
-        script: flutter analyze lib/tz_build.dart
+        script: python tool/fix_tz_build.py
+      - name: Apply password recovery fix
+        script: python tool/recovery_flow_fix.py
+      - name: Remove optional build-time TextInput calls
+        script: python tool/build_safety_cleanup.py
+      - name: Analyze full TZ app
+        script: flutter analyze
       - name: Build release Windows app
         script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
       - name: Package Windows app
