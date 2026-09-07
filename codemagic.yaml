@@ -14,14 +14,10 @@ workflows:
         script: flutter pub get
       - name: Configure Android auth and internet
         script: python3 tool/prepare_platforms.py
-      - name: Build clean TZ production source
-        script: python3 tool/agent_registration_fix2.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python3 tool/restore_auth_ui.py
-      - name: Fix Supabase PKCE recovery and password change
-        script: python3 tool/auth_flow_fix.py
-      - name: Apply auth SDK compatibility fix
-        script: python3 tool/auth_compat_fix.py
+      - name: Repair TZ production source
+        script: python3 tool/fix_tz_build.py
+      - name: Finalize TZ auth and password flows
+        script: python3 tool/final_tz_auth_build.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release APK
@@ -45,14 +41,10 @@ workflows:
         script: flutter pub get
       - name: Configure iOS auth callback
         script: python3 tool/prepare_platforms.py
-      - name: Build clean TZ production source
-        script: python3 tool/agent_registration_fix2.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python3 tool/restore_auth_ui.py
-      - name: Fix Supabase PKCE recovery and password change
-        script: python3 tool/auth_flow_fix.py
-      - name: Apply auth SDK compatibility fix
-        script: python3 tool/auth_compat_fix.py
+      - name: Repair TZ production source
+        script: python3 tool/fix_tz_build.py
+      - name: Finalize TZ auth and password flows
+        script: python3 tool/final_tz_auth_build.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
@@ -73,14 +65,10 @@ workflows:
         script: powershell -NoProfile -Command "[IO.File]::WriteAllBytes('assets/temz_logo.jpg',[Convert]::FromBase64String((Get-Content -Raw assets/temz_logo.b64)))"
       - name: Install dependencies
         script: python -m pip install --upgrade pip; flutter pub get
-      - name: Build clean TZ production source
-        script: python tool/agent_registration_fix2.py
-      - name: Restore login, forgot-password and agent registration UI
-        script: python tool/restore_auth_ui.py
-      - name: Fix Supabase PKCE recovery and password change
-        script: python tool/auth_flow_fix.py
-      - name: Apply auth SDK compatibility fix
-        script: python tool/auth_compat_fix.py
+      - name: Repair TZ production source
+        script: python tool/fix_tz_build.py
+      - name: Finalize TZ auth and password flows
+        script: python tool/final_tz_auth_build.py
       - name: Analyze TZ app source only
         script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
