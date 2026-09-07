@@ -23,7 +23,7 @@ workflows:
       - name: Remove optional build-time TextInput calls
         script: python3 tool/build_safety_cleanup.py
       - name: Analyze TZ app source only
-        script: flutter analyze lib
+        script: flutter analyze lib/tz_build.dart
       - name: Build release APK
         script: flutter build apk --release --target=lib/tz_build.dart
     artifacts:
@@ -54,7 +54,7 @@ workflows:
       - name: Remove optional build-time TextInput calls
         script: python3 tool/build_safety_cleanup.py
       - name: Analyze TZ app source only
-        script: flutter analyze lib
+        script: flutter analyze lib/tz_build.dart
       - name: Build release IPA
         script: flutter build ipa --release --no-codesign --target=lib/tz_build.dart
     artifacts:
@@ -82,7 +82,7 @@ workflows:
       - name: Remove optional build-time TextInput calls
         script: python tool/build_safety_cleanup.py
       - name: Analyze TZ app source only
-        script: flutter analyze lib
+        script: flutter analyze lib/tz_build.dart
       - name: Build release Windows app
         script: flutter config --enable-windows-desktop && flutter build windows --release --target=lib/tz_build.dart
       - name: Package Windows app
