@@ -1,14 +1,11 @@
 from pathlib import Path
-import re
 
 p = Path('lib/tz_build.dart')
 s = p.read_text(encoding='utf-8')
 
-# Native deep-link handling for Supabase PKCE recovery.
 if "package:app_links/app_links.dart" not in s:
     s = "import 'dart:async';\nimport 'package:app_links/app_links.dart';\n" + s
 
-# Use Supabase's supported publishable-key + PKCE configuration.
 s = s.replace(
     'Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey)',
     'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authFlowType: AuthFlowType.pkce)',
@@ -19,11 +16,8 @@ s = s.replace(
     'Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey, authFlowType: AuthFlowType.pkce)',
     1,
 )
-
-# Redirect through the Temz confirmation page, which then opens the native app.
 s = s.replace("redirectTo: 'tz://auth-callback/'", "redirectTo: 'https://temz.ng/tz-auth/'")
 
-# Install deep-link bootstrap once.
 if 'Future<void> _initAuthDeepLinks() async {' not in s:
     marker = 'final SupabaseClient db = Supabase.instance.client;'
     block = r'''
@@ -50,9 +44,7 @@ Future<void> _handleAuthDeepLink(Uri uri) async {
         if (values['type'] == 'recovery') _passwordRecoveryMode = true;
       }
     }
-  } catch (_) {
-    // AuthGate will remain on the login screen if the callback is invalid.
-  }
+  } catch (_) {}
 }
 
 Future<void> _initAuthDeepLinks() async {
@@ -71,26 +63,20 @@ Future<void> _initAuthDeepLinks() async {
         raise SystemExit('Supabase client marker not found')
     s = s.replace(marker, marker + block, 1)
 
-# Start the deep-link listener before the first frame.
-s = s.replace(
-    'runApp(const TZApp());',
-    'await _initAuthDeepLinks();\n  runApp(const TZApp());',
-    1,
-)
+if 'await _initAuthDeepLinks();' not in s:
+    s = s.replace('runApp(const TZApp());', 'await _initAuthDeepLinks();\n  runApp(const TZApp());', 1)
 
-# Replace AuthGate with a recovery-aware gate.
+# Replace AuthGate only once, preserving LoginPage/ProfileGate.
 a = s.find('class AuthGate extends StatelessWidget {')
 b = s.find('class Logo extends StatelessWidget {', a)
-if a < 0 or b < 0:
-    raise SystemExit('AuthGate boundaries not found')
-auth = r'''class AuthGate extends StatefulWidget {
+if a >= 0 and b > a:
+    auth = r'''class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
   @override State<AuthGate> createState() => _AuthGateState();
 }
 
 class _AuthGateState extends State<AuthGate> {
   bool recovery = _passwordRecoveryMode;
-
   @override
   void initState() {
     super.initState();
@@ -100,7 +86,6 @@ class _AuthGateState extends State<AuthGate> {
       if (data.event == AuthChangeEvent.signedOut) setState(() => recovery = false);
     });
   }
-
   @override
   Widget build(BuildContext context) {
     if (recovery && db.auth.currentSession != null) return const RecoveryPasswordPage();
@@ -116,9 +101,8 @@ class _AuthGateState extends State<AuthGate> {
 }
 
 '''
-s = s[:a] + auth + s[b:]
+    s = s[:a] + auth + s[b:]
 
-# Add password pages immediately before ProfileGate.
 if 'class ChangePasswordPage extends StatefulWidget {' not in s:
     marker = 'class ProfileGate extends StatefulWidget {'
     pages = r'''class RecoveryPasswordPage extends StatefulWidget {
@@ -131,7 +115,6 @@ class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
   final confirm = TextEditingController();
   bool busy = false;
   bool hidden = true;
-
   Future<void> save() async {
     if (password.text.length < 8 || password.text != confirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords must match and contain at least 8 characters.')));
@@ -145,11 +128,8 @@ class _RecoveryPasswordPageState extends State<RecoveryPasswordPage> {
       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const ProfileGate()), (_) => false);
     } on AuthException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+    } finally { if (mounted) setState(() => busy = false); }
   }
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Set New Password')),
@@ -181,7 +161,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final confirm = TextEditingController();
   bool busy = false;
   bool hidden = true;
-
   Future<void> change() async {
     if (current.text.isEmpty || next.text.length < 8 || next.text != confirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter your current password and a matching new password of at least 8 characters.')));
@@ -195,11 +174,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       Navigator.pop(context);
     } on AuthException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+    } finally { if (mounted) setState(() => busy = false); }
   }
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Change Password')),
@@ -226,11 +202,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         raise SystemExit('ProfileGate marker not found')
     s = s.replace(marker, pages + marker, 1)
 
-# Add Change Password to the authenticated drawer.
 logout = "ListTile(leading: const Icon(Icons.logout), title: const Text('Log out'), onTap: () => db.auth.signOut()),"
-if logout in s and 'const Icon(Icons.password_outlined)' not in s:
-    change_tile = "ListTile(leading: const Icon(Icons.password_outlined), title: const Text('Change Password'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordPage()))),\n              "
-    s = s.replace(logout, change_tile + logout, 1)
+change_tile = "ListTile(leading: const Icon(Icons.password_outlined), title: const Text('Change Password'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordPage()))),"
+if logout in s and change_tile not in s:
+    s = s.replace(logout, change_tile + '\n              ' + logout, 1)
 
 p.write_text(s, encoding='utf-8')
 print('Auth flow fixed: PKCE deep links, working password recovery, and signed-in password change.')
